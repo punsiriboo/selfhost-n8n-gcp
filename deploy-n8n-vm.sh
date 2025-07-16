@@ -2,18 +2,16 @@
 
 set -e
 
-
-REPO_DIR="selfhost-n8n-gcp"
 VOLUME_DIR=$(pwd)/data
+CERT_DIR=$(pwd)/certs
 FIREWALL_RULE_NAME="allow-http-n8n"
 FIREWALL_TAG="n8n-server"
 
-# Install dependencies
 echo "Installing Docker and dependencies..."
 sudo apt-get update -y
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
 
-# Install Docker
+# Install Docker if not present
 if ! command -v docker &> /dev/null; then
   curl -fsSL https://get.docker.com -o get-docker.sh
   sh get-docker.sh
@@ -22,13 +20,31 @@ fi
 
 # Install Docker Compose CLI plugin
 DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-mkdir -p $DOCKER_CONFIG/cli-plugins
+mkdir -p "$DOCKER_CONFIG/cli-plugins"
 if ! [ -f "$DOCKER_CONFIG/cli-plugins/docker-compose" ]; then
   curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-    -o $DOCKER_CONFIG/cli-plugins/docker-compose
-  chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+    -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
+  chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
 fi
 
+# Check if Docker daemon is running
+if ! docker info > /dev/null 2>&1; then
+  echo "Docker daemon is not running. Please start it first."
+  exit 1
+fi
+
+# Generate self-signed certs
+mkdir -p "$CERT_DIR"
+if [ ! -f "$CERT_DIR/selfsigned.crt" ] || [ ! -f "$CERT_DIR/selfsigned.key" ]; then
+  echo "Generating self-signed SSL certificate..."
+  openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+    -keyout "$CERT_DIR/selfsigned.key" \
+    -out "$CERT_DIR/selfsigned.crt" \
+    -subj "/CN=n8n.local"
+  echo "Self-signed certificate created successfully."
+else
+  echo "Certificate already exists. Skipping generation."
+fi
 
 # Create .env from example if not exists
 if [ ! -f .env ]; then
@@ -54,16 +70,16 @@ if ! grep -q "$VOLUME_DIR/postgres" docker-compose.yml; then
   sed -i "s|postgres_data:/var/lib/postgresql/data|${VOLUME_DIR}/postgres:/var/lib/postgresql/data|" docker-compose.yml
 fi
 
-# Setup GCP firewall (requires gcloud CLI and permission)
+# Setup GCP firewall rule
 if command -v gcloud &> /dev/null; then
   if ! gcloud compute firewall-rules list --format="value(name)" | grep -q "^${FIREWALL_RULE_NAME}$"; then
     echo "Creating firewall rule to allow HTTP (port 80)..."
-    gcloud compute firewall-rules create $FIREWALL_RULE_NAME \
+    gcloud compute firewall-rules create "$FIREWALL_RULE_NAME" \
       --allow tcp:80 \
       --description="Allow HTTP traffic to n8n" \
       --direction=INGRESS \
       --priority=1000 \
-      --target-tags=$FIREWALL_TAG \
+      --target-tags="$FIREWALL_TAG" \
       --source-ranges=0.0.0.0/0
   else
     echo "Firewall rule '$FIREWALL_RULE_NAME' already exists."
@@ -72,9 +88,9 @@ else
   echo "gcloud CLI not found. Skipping firewall rule setup."
 fi
 
-echo "Running Docker Compose..."
-docker compose up -d
+echo "Starting Docker Compose..."
+docker compose --env-file .env up -d
 
 echo ""
-echo "n8n is now running at: http://${EXTERNAL_IP}"
-echo "Postgres data is persisted at: $VOLUME_DIR/postgres"
+echo "n8n is now running at: https://${EXTERNAL_IP} (self-signed cert)"
+echo "Postgres data is stored in: $VOLUME_DIR/postgres"
