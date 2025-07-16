@@ -8,17 +8,9 @@ FIREWALL_RULE_NAME="allow-http-n8n"
 FIREWALL_TAG="n8n-server"
 
 # Generate self-signed certs
-mkdir -p "$CERT_DIR"
-if [ ! -f "$CERT_DIR/selfsigned.crt" ] || [ ! -f "$CERT_DIR/selfsigned.key" ]; then
-  echo "Generating self-signed SSL certificate..."
-  openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-    -keyout "$CERT_DIR/selfsigned.key" \
-    -out "$CERT_DIR/selfsigned.crt" \
-    -subj "/CN=n8n.local"
-  echo "Self-signed certificate created successfully."
-else
-  echo "Certificate already exists. Skipping generation."
-fi
+mkdir -p ./letsencrypt
+touch ./letsencrypt/acme.json
+chmod 600 ./letsencrypt/acme.json
 
 # Create .env from example if not exists
 if [ ! -f .env ]; then
