@@ -2,7 +2,7 @@
 
 set -e
 
-REPO_URL="https://github.com/YOUR_USERNAME/SELFHOST-N8N-GCP.git"
+
 REPO_DIR="selfhost-n8n-gcp"
 VOLUME_DIR=$(pwd)/data
 FIREWALL_RULE_NAME="allow-http-n8n"
@@ -29,12 +29,6 @@ if ! [ -f "$DOCKER_CONFIG/cli-plugins/docker-compose" ]; then
   chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
 fi
 
-# Clone repo if not exists
-if [ ! -d "$REPO_DIR" ]; then
-  echo "Cloning repository..."
-  git clone $REPO_URL $REPO_DIR
-fi
-cd $REPO_DIR
 
 # Create .env from example if not exists
 if [ ! -f .env ]; then
