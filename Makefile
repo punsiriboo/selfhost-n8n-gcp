@@ -1,7 +1,7 @@
 PROJECT_ID=$(gcloud config get-value project)
 ZONE=us-central1-a
 VM_NAME=n8n-vm
-REPO=https://github.com/YOUR_USERNAME/selfhost-n8n-gcp.git
+REPO=https://github.com/punsiriboo/selfhost-n8n-gcp.git
 
 create-vm:
 	gcloud compute instances create $(VM_NAME) \
