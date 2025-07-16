@@ -44,12 +44,13 @@ services:
       - "--providers.docker=true"
       - "--api.dashboard=true"
       - "--entrypoints.websecure.http.tls=true"
-      - "--entrypoints.websecure.http.tls.cert=/certs/selfsigned.crt"
-      - "--entrypoints.websecure.http.tls.key=/certs/selfsigned.key"
+      - "--certificatesResolvers.default.acme.tlsChallenge=true"
+      - "--certificatesResolvers.default.acme.email=you@example.com"
+      - "--certificatesResolvers.default.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./certs:/certs"
+      - "./letsencrypt:/letsencrypt"
     restart: always
