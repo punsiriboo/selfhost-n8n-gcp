@@ -7,10 +7,6 @@ CERT_DIR=$(pwd)/certs
 FIREWALL_RULE_NAME="allow-http-n8n"
 FIREWALL_TAG="n8n-server"
 
-echo "Installing Docker and dependencies..."
-sudo apt-get update -y
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
-
 # Check if Docker daemon is running
 if ! docker info > /dev/null 2>&1; then
   echo "Docker daemon is not running. Please start it first."
