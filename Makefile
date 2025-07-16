@@ -1,5 +1,5 @@
 PROJECT_ID := $(shell gcloud config get-value project)
-ZONE := us-central1-a
+ZONE := asia-southeast1
 VM_NAME := n8n-vm
 
 
