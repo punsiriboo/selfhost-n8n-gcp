@@ -3,7 +3,7 @@ ZONE := us-central1-a
 VM_NAME := n8n-vm
 REPO := https://github.com/punsiriboo/selfhost-n8n-gcp.git
 
-create-vm:
+create-vm: ## สร้าง VM พร้อม startup script
 	gcloud compute instances create "$(VM_NAME)" \
 		--project="$(PROJECT_ID)" \
 		--zone="$(ZONE)" \
@@ -16,10 +16,10 @@ create-vm:
 		--metadata-from-file startup-script=startup.sh \
 		--network-tier=STANDARD
 
-ssh:
+ssh: ## SSH เข้า VM
 	gcloud compute ssh $(VM_NAME) --zone=$(ZONE)
 
-deploy:
+deploy: ## Clone และ deploy n8n บน VM
 	gcloud compute ssh $(VM_NAME) --zone=$(ZONE) --command="bash -c '\
 		if [ ! -d selfhost-n8n-gcp ]; then \
 			git clone $(REPO); \
@@ -28,9 +28,17 @@ deploy:
 		chmod +x deploy-n8n-vm.sh && \
 		./deploy-n8n-vm.sh'"
 
-open:
-	@echo "🔗 Browse your n8n UI at:"
+open: ## แสดง External IP เพื่อเปิด n8n UI
+	@echo "Browse your n8n UI at:"
 	@gcloud compute instances describe $(VM_NAME) --zone=$(ZONE) --format='value(networkInterfaces[0].accessConfigs[0].natIP)' | xargs -I{} echo "http://{}"
 
-delete:
+delete: ## ลบ VM
 	gcloud compute instances delete $(VM_NAME) --zone=$(ZONE) --quiet
+
+.PHONY: list help
+
+## list: แสดงคำสั่งทั้งหมดที่สามารถใช้ได้
+list help:
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
