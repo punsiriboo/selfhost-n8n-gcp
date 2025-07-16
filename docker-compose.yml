@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: n8ndb
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+
   n8n:
     image: n8nio/n8n:latest
     environment:
@@ -20,8 +21,9 @@ services:
       DB_POSTGRESDB_PASSWORD: n8npass
       N8N_HOST: n8n
       N8N_PORT: 5678
-      N8N_EDITOR_BASE_URL: http://${EXTERNAL_IP}
-      WEBHOOK_URL: http://${EXTERNAL_IP}
+      N8N_PROTOCOL: https
+      N8N_EDITOR_BASE_URL: https://${EXTERNAL_IP}
+      WEBHOOK_URL: https://${EXTERNAL_IP}
       N8N_SKIP_ORIGIN_CHECK: true
       N8N_DISABLE_UI_ACCESS_CONTROL: true
     restart: always
@@ -30,10 +32,11 @@ services:
 
   nginx:
     image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - n8n
-
