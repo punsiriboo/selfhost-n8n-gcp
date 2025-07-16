@@ -1,7 +1,7 @@
 PROJECT_ID := $(shell gcloud config get-value project)
 ZONE := us-central1-a
 VM_NAME := n8n-vm
-REPO := https://github.com/punsiriboo/selfhost-n8n-gcp.git
+
 
 create-vm: ## สร้าง VM พร้อม startup script
 	gcloud compute instances create "$(VM_NAME)" \
@@ -15,12 +15,6 @@ create-vm: ## สร้าง VM พร้อม startup script
 		--scopes=https://www.googleapis.com/auth/cloud-platform \
 		--metadata-from-file startup-script=startup.sh \
 		--network-tier=STANDARD
-
-clone: ## Clone Git repo
-	gcloud compute ssh $(VM_NAME) --zone=$(ZONE) --command="bash -c '\
-		if [ ! -d selfhost-n8n-gcp ]; then \
-			git clone $(REPO); \
-		fi '"
 		
 ssh: ## SSH เข้า VM
 	gcloud compute ssh $(VM_NAME) --zone=$(ZONE)

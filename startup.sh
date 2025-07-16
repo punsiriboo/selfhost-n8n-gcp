@@ -1,22 +1,32 @@
 #!/bin/bash
 
+set -e
+
 echo "Installing Docker and dependencies..."
 apt-get update -y
 apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
 
+# Install Docker
 if ! command -v docker &> /dev/null; then
   curl -fsSL https://get.docker.com -o get-docker.sh
   sh get-docker.sh
-  usermod -aG docker $USER
+  usermod -aG docker $(whoami)
 fi
 
-DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+# Install Docker Compose Plugin
+DOCKER_CONFIG="/root/.docker"
 mkdir -p "$DOCKER_CONFIG/cli-plugins"
-if ! [ -f "$DOCKER_CONFIG/cli-plugins/docker-compose" ]; then
+if [ ! -f "$DOCKER_CONFIG/cli-plugins/docker-compose" ]; then
   curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
     -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
   chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
 fi
 
-# Auto-login docker group for future sessions (only affects future ssh logins)
-echo "newgrp docker" >> /etc/profile
+# Clone the repo if not exists
+REPO="https://github.com/punsiriboo/selfhost-n8n-gcp.git"
+cd /root
+if [ ! -d selfhost-n8n-gcp ]; then
+  git clone "$REPO"
+fi
+
+echo "Startup script complete."
