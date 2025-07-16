@@ -11,22 +11,6 @@ echo "Installing Docker and dependencies..."
 sudo apt-get update -y
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common git
 
-# Install Docker if not present
-if ! command -v docker &> /dev/null; then
-  curl -fsSL https://get.docker.com -o get-docker.sh
-  sh get-docker.sh
-  sudo usermod -aG docker $USER
-fi
-
-# Install Docker Compose CLI plugin
-DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-mkdir -p "$DOCKER_CONFIG/cli-plugins"
-if ! [ -f "$DOCKER_CONFIG/cli-plugins/docker-compose" ]; then
-  curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-    -o "$DOCKER_CONFIG/cli-plugins/docker-compose"
-  chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
-fi
-
 # Check if Docker daemon is running
 if ! docker info > /dev/null 2>&1; then
   echo "Docker daemon is not running. Please start it first."
