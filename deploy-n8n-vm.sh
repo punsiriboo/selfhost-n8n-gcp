@@ -7,20 +7,6 @@ CERT_DIR=$(pwd)/certs
 FIREWALL_RULE_NAME="allow-http-n8n"
 FIREWALL_TAG="n8n-server"
 
-# Wait until Docker daemon is ready
-echo "Waiting for Docker daemon to be ready..."
-RETRIES=20
-COUNT=0
-until docker info > /dev/null 2>&1; do
-  COUNT=$((COUNT + 1))
-  if [ "$COUNT" -ge "$RETRIES" ]; then
-    echo "Docker daemon is still not responding after $RETRIES tries. Exiting."
-    exit 1
-  fi
-  echo "🔄 Docker not ready yet. Retrying ($COUNT/$RETRIES)..."
-  sleep 5
-done
-
 # Generate self-signed certs
 mkdir -p "$CERT_DIR"
 if [ ! -f "$CERT_DIR/selfsigned.crt" ] || [ ! -f "$CERT_DIR/selfsigned.key" ]; then

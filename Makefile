@@ -16,17 +16,14 @@ create-vm: ## สร้าง VM พร้อม startup script
 		--metadata-from-file startup-script=startup.sh \
 		--network-tier=STANDARD
 
-ssh: ## SSH เข้า VM
-	gcloud compute ssh $(VM_NAME) --zone=$(ZONE)
-
-deploy: ## Clone และ deploy n8n บน VM
+clone: ## Clone Git repo
 	gcloud compute ssh $(VM_NAME) --zone=$(ZONE) --command="bash -c '\
 		if [ ! -d selfhost-n8n-gcp ]; then \
 			git clone $(REPO); \
-		fi && \
-		cd selfhost-n8n-gcp && \
-		chmod +x deploy-n8n-vm.sh && \
-		./deploy-n8n-vm.sh'"
+		fi '"
+		
+ssh: ## SSH เข้า VM
+	gcloud compute ssh $(VM_NAME) --zone=$(ZONE)
 
 open: ## แสดง External IP เพื่อเปิด n8n UI
 	@echo "Browse your n8n UI at:"
