@@ -3,11 +3,11 @@
 set -e
 
 VOLUME_DIR=$(pwd)/data
-CERT_DIR=$(pwd)/certs
-FIREWALL_RULE_NAME="allow-http-n8n"
 FIREWALL_TAG="n8n-server"
+VM_NAME="n8n-vm"
+ZONE="us-central1-a"
 
-# Generate self-signed certs
+# Generate ACME cert file
 mkdir -p ./letsencrypt
 touch ./letsencrypt/acme.json
 chmod 600 ./letsencrypt/acme.json
@@ -36,22 +36,45 @@ if ! grep -q "$VOLUME_DIR/postgres" docker-compose.yml; then
   sed -i "s|postgres_data:/var/lib/postgresql/data|${VOLUME_DIR}/postgres:/var/lib/postgresql/data|" docker-compose.yml
 fi
 
-# Setup GCP firewall rule
+# Setup GCP firewall rules and VM tags
 if command -v gcloud &> /dev/null; then
-  if ! gcloud compute firewall-rules list --format="value(name)" | grep -q "^${FIREWALL_RULE_NAME}$"; then
-    echo "Creating firewall rule to allow HTTP (port 80)..."
-    gcloud compute firewall-rules create "$FIREWALL_RULE_NAME" \
+
+  # Add tags to VM
+  echo "Adding tags to VM: $VM_NAME"
+  gcloud compute instances add-tags "$VM_NAME" \
+    --tags="$FIREWALL_TAG,http-server,https-server" \
+    --zone="$ZONE"
+
+  # Create allow-http if not exists
+  if ! gcloud compute firewall-rules list --format="value(name)" | grep -q "^allow-http$"; then
+    echo "Creating firewall rule 'allow-http'..."
+    gcloud compute firewall-rules create allow-http \
       --allow tcp:80 \
-      --description="Allow HTTP traffic to n8n" \
+      --target-tags="$FIREWALL_TAG" \
+      --description="Allow HTTP traffic" \
       --direction=INGRESS \
       --priority=1000 \
-      --target-tags="$FIREWALL_TAG" \
-      --source-ranges=0.0.0.0/0
+      --network=default
   else
-    echo "Firewall rule '$FIREWALL_RULE_NAME' already exists."
+    echo "Firewall rule 'allow-http' already exists."
   fi
+
+  # Create allow-https if not exists
+  if ! gcloud compute firewall-rules list --format="value(name)" | grep -q "^allow-https$"; then
+    echo "Creating firewall rule 'allow-https'..."
+    gcloud compute firewall-rules create allow-https \
+      --allow tcp:443 \
+      --target-tags="$FIREWALL_TAG" \
+      --description="Allow HTTPS traffic" \
+      --direction=INGRESS \
+      --priority=1000 \
+      --network=default
+  else
+    echo "Firewall rule 'allow-https' already exists."
+  fi
+
 else
-  echo "gcloud CLI not found. Skipping firewall rule setup."
+  echo "gcloud CLI not found. Skipping firewall and VM tag setup."
 fi
 
 echo "Starting Docker Compose..."
