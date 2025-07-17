@@ -78,7 +78,7 @@ else
 fi
 
 echo "Starting Docker Compose..."
-docker compose --env-file .env up -d
+docker compose up -d
 
 echo ""
 echo "n8n is now running at: https://${EXTERNAL_IP} (self-signed cert)"
